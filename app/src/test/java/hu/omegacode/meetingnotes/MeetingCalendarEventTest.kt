@@ -47,4 +47,30 @@ class MeetingCalendarEventTest {
         assertEquals(180_000L, event.endTimeMillis - event.beginTimeMillis)
         assertTrue(event.formatEnd().contains("2026. 11. 24. 00:02"))
     }
+
+    @Test
+    fun `hianyzo vagy ervenytelen kezdes hibara fut`() {
+        for (badValue in listOf(null, "", "null", "nem-dátum")) {
+            assertThrows(IllegalArgumentException::class.java) {
+                MeetingCalendarEvent.fromApi("Próba", badValue, 120.0, budapest)
+            }
+        }
+    }
+
+    @Test
+    fun `hianyzo felvetelhossznal egy ora az alapertelmezett ido`() {
+        val event = MeetingCalendarEvent.fromApi("Próba", "2026-11-23T13:57", null, budapest)
+
+        assertEquals(3_600_000L, event.endTimeMillis - event.beginTimeMillis)
+        assertFalse(event.hasRecordingDuration)
+        assertTrue(event.description.contains("alapértelmezett"))
+    }
+
+    @Test
+    fun `ures cimhez alapertelmezett megnevezest ad`() {
+        val event = MeetingCalendarEvent.fromApi("   ", "2026-11-23T13:57", 60.0, budapest)
+
+        assertEquals("Megbeszélés", event.title)
+        assertEquals(60_000L, event.endTimeMillis - event.beginTimeMillis)
+    }
 }
