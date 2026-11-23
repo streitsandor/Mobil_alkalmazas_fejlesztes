@@ -1,0 +1,27 @@
+GDE MEETINGNOTES - ANDROID/KOTLIN
+Datum: 2026-11-16
+
+ELKESZULT:
+- Kotlin nativ Activity + API kliens + CSRF/sutis bejelentkezes
+- Gradle Kotlin DSL projekt, manifest, launcher icon
+- Android Studio / Gradle APK build utmutato, GitHub Actions workflow
+- Kiegeszitett 17 oldalas Word kezikonyv
+
+LOKALISAN ELLENORIZVE:
+- ServerAddress 6/6 Kotlin/JVM smoketest sikeres.
+- MainActivity, ApiClient, ServerAddress forrasa Kotlin fordítóval szintaktikailag es tipusszinten
+  ellenorizve HELYETTESITO Android/JSON tipusok mellett.
+- Forraskod es aktualis C# API vegpontok statikus osszevetese.
+
+NEM ELLENORIZHETO ITT:
+- Nincs telepitett Android SDK / Gradle.
+- Az SDK letoltesi proba nem sikerult (elerni az internetes csomagforrasokat nem sikerult).
+- Emiatt NINCS legeneralt app-debug.apk. Az atadott csomag csak forraskod.
+- Nem tortent Android emulatoros / telefonos / valos OmegaAI-s teszt.
+
+APK BUILD WINDOWS-ON:
+  Android Studio -> File/Open projekt -> Build/Build APK(s)
+  Vagy: gradle :app:assembleDebug
+  Sikeres eredmeny: app/build/outputs/apk/debug/app-debug.apk
+
+BOVEBB LEIRAS: README_HU.md es Dokumentacio/....docx
