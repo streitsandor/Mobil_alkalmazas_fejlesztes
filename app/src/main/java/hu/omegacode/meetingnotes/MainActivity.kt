@@ -238,6 +238,7 @@ class MainActivity : Activity() {
                 addLabel(row, job.optString("title", "Megbeszélés"), 16f, true)
                 addLabel(row, job.optString("time") + "  ·  " + id, 12f, false, muted)
                 action(row, "Megnyitás") { showJob(id) }
+                action(row, "Hozzáadás a naptárhoz") { addMeetingToCalendar(id) }
                 action(row, "Törlés", true) { deleteJob(id) }
             }
             if (count == 0) addLabel(results, "Még nincs saját feldolgozás.", 15f, false, muted)
@@ -264,6 +265,7 @@ class MainActivity : Activity() {
         val state = card(content)
         addLabel(state, "Állapot lekérdezése…", 14f, false, muted)
         action(content, "Állapot frissítése") { showJob(id) }
+        action(content, "Hozzáadás a naptárhoz") { addMeetingToCalendar(id) }
         action(content, "Átirat") { showRemoteText("Átirat", "/meetings/${encode(id)}/transcript") }
         action(content, "Összesítő") { showRemoteText("Qwen összesítő", "/meetings/${encode(id)}/summary") }
         action(content, "Beszélőszakaszok") { showRemoteText("Beszélők", "/meetings/${encode(id)}/segments") }
@@ -294,6 +296,53 @@ class MainActivity : Activity() {
             if (ahead >= 0) addLabel(state, "Sorban előtted: $ahead")
             val message = data.optString("message", "")
             if (message.isNotBlank()) addLabel(state, message)
+        }
+    }
+
+    // Calendar meeting hozzáadása
+    private fun addMeetingToCalendar(id: String) {
+        io({ client.get("/meetings/${encode(id)}").obj() }) { details ->
+            val event = try {
+                MeetingCalendarEvent.fromApi(
+                    title = details.optString("title"),
+                    startedAt = details.optString("started_at"),
+                    totalSeconds = details.optDouble("total_seconds", Double.NaN)
+                )
+            } catch (error: IllegalArgumentException) {
+                alert("Hiányzó vagy hibás dátum", error.message ?: "Nem értelmezhető a megbeszélés kezdése.")
+                return@io
+            }
+
+            val localStart = event.formatStart()
+            val localEnd = event.formatEnd()
+            val zoneInfo = if (event.assumedDeviceZone) { // Időzóna kezelés
+                "A szerver nem adott meg időzónát. A kezdést a telefon időzónájában (${event.zoneId.id}) értelmeztük. " +
+                    "Mentés előtt ellenőrizd a naptárban!"
+            } else {
+                "A kezdés időzóna-eltolást tartalmaz; a telefon időzónájában (${event.zoneId.id}) jelenítjük meg."
+            }
+
+            val durationInfo = if (event.hasRecordingDuration) { // Idő becsülés
+                "Befejezés: a hanganyag hossza alapján becsülve."
+            } else {
+                "Befejezés: 60 perces alapértelmezett becslés."
+            }
+
+            // Alert létrehozása
+            AlertDialog.Builder(this)
+                .setTitle("Naptáresemény előkészítése")
+                .setMessage("${event.title}\nKezdés: $localStart\nBefejezés: $localEnd\n\n$zoneInfo\n$durationInfo\n\n" +
+                    "Az eseményt a naptáralkalmazásban külön kell mentened.")
+                .setNegativeButton("Mégse", null)
+                .setPositiveButton("Naptár megnyitása") { _, _ ->
+                    try {
+                        CalendarEventLauncher.openEditor(this, event)
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        alert("Nincs naptáralkalmazás", "Nem található naptáreseményt szerkesztő alkalmazás. Telepíts egy naptárappot, majd próbáld újra.")
+                    } catch (_: SecurityException) {
+                        alert("Naptár nem érhető el", "A készülék nem engedte megnyitni a naptáralkalmazást.")
+                    }
+                }.show()
         }
     }
 
